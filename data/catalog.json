@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "name": "Consumer GPU Model Card",
+    "catalog_date": "2026-11-07",
+    "sample_label": "Curated sample of well-known public GPUs and quantized models. Not a complete list, not a leaderboard, and not a set of measurements taken for this project.",
+    "disclaimer": "Model VRAM, disk, and system RAM figures are rounded estimates. This repository did not run tokens-per-second benchmarks. GPU memory sizes are vendor-published specs, listed so you can identify the card.",
+    "estimate_basis": "Estimate basis: a typical public GGUF file size for that quant, plus a few GB for the runtime and the KV cache at roughly 4k–8k tokens. Numbers are rounded on purpose.",
+    "weights_note": "This site does not host weights. Open the public model card, then choose a GGUF-style quant whose filename matches the row (for example Q4_K_M) from a publisher you trust. Some model cards ask you to accept a license.",
+    "fit_rule": {
+      "reserve_gb": 1,
+      "likely_of_usable": 0.85,
+      "offload_of_vram": 2,
+      "context_note": "Estimate assumes a short context, roughly 4k–8k tokens. Longer chats grow the KV cache and can move a row from likely to tight or to partial offload."
+    },
+    "start_here": [
+      {
+        "label": "llama.cpp",
+        "url": "https://github.com/ggml-org/llama.cpp",
+        "note": "Local runtime that loads GGUF files."
+      },
+      {
+        "label": "GGUF on Hugging Face",
+        "url": "https://huggingface.co/docs/hub/gguf",
+        "note": "Public explanation of the GGUF file format."
+      }
+    ]
+  },
+  "gpus": [
+    {
+      "id": "rtx-4060-8gb",
+      "name": "GeForce RTX 4060 8GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 8,
+      "memory": "GDDR6",
+      "bus": "128-bit",
+      "class_label": "8GB class",
+      "spec_note": "Widely published vendor memory config for the 8GB retail card. Confirm the exact board before buying.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 3B Q4 is the comfortable start on 8GB. A 7B or 8B Q4 row is often tight at short context.",
+        "Estimate: 8B Q8 and 12B-class Q4 usually need a smaller quant or partial offload.",
+        "Estimate: 16GB system RAM is a practical first-build floor. 32GB is easier if you offload layers."
+      ]
+    },
+    {
+      "id": "rtx-3060-12gb",
+      "name": "GeForce RTX 3060 12GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 12,
+      "memory": "GDDR6",
+      "bus": "192-bit",
+      "class_label": "12GB class",
+      "spec_note": "Widely published vendor memory config for the 12GB retail card. An 8GB RTX 3060 also exists; match the GB on the box.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you. Ampere cards are still common on the used market.",
+      "capacity_notes": [
+        "Estimate: 7B–9B Q4/Q5 is the comfortable band. 8B Q8 and 12B–14B Q4 are often tight.",
+        "Estimate: 27B and 32B Q4 weights generally mean partial CPU offload on 12GB.",
+        "Estimate: 32GB system RAM is a sensible target when you use a 12GB card and sometimes offload."
+      ]
+    },
+    {
+      "id": "rtx-4070-12gb",
+      "name": "GeForce RTX 4070 12GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 12,
+      "memory": "GDDR6X",
+      "bus": "192-bit",
+      "class_label": "12GB class",
+      "spec_note": "Widely published vendor memory config for the 12GB RTX 4070. Fit estimates follow capacity, not shader count.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: same 12GB capacity band as a 3060 12GB. Extra GPU speed does not raise the VRAM ceiling.",
+        "Estimate: 7B–9B Q4/Q5 is comfortable. 14B Q4 is often tight once context and the desktop take space.",
+        "Estimate: plan about 32GB system RAM if you want room to offload a larger quant."
+      ]
+    },
+    {
+      "id": "rtx-5070-12gb",
+      "name": "GeForce RTX 5070 12GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 12,
+      "memory": "GDDR7",
+      "bus": "192-bit",
+      "class_label": "12GB class",
+      "spec_note": "NVIDIA's GeForce compare table lists 12 GB GDDR7 and a 192-bit interface for the RTX 5070 (published spec).",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 12GB class. Newer memory generations do not, by themselves, fit a larger weight file.",
+        "Estimate: 7B–9B Q4/Q5 is the comfortable starter band. 14B Q4 is often tight.",
+        "Estimate: 32GB system RAM pairs more calmly with a 12GB card than 16GB does."
+      ]
+    },
+    {
+      "id": "arc-b580-12gb",
+      "name": "Intel Arc B580 12GB",
+      "vendor": "Intel",
+      "vram_gb": 12,
+      "memory": "GDDR6",
+      "bus": "192-bit",
+      "class_label": "12GB class",
+      "spec_note": "Widely published vendor memory config for the Arc B580 12GB retail card. Confirm on Intel's product page.",
+      "spec_url": "https://www.intel.com/content/www/us/en/products/details/discrete-gpus/arc.html",
+      "runtime_note": "CUDA builds do not drive this card. Look at llama.cpp Vulkan or SYCL builds.",
+      "capacity_notes": [
+        "Estimate: capacity class matches other 12GB cards. Software support is the part to check first.",
+        "Estimate: 7B–9B Q4/Q5 is the comfortable band if your runtime actually uses the GPU.",
+        "Estimate: keep about 32GB system RAM so a Vulkan or SYCL build still has room to offload."
+      ]
+    },
+    {
+      "id": "rtx-4060-ti-16gb",
+      "name": "GeForce RTX 4060 Ti 16GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 16,
+      "memory": "GDDR6",
+      "bus": "128-bit",
+      "class_label": "16GB class",
+      "spec_note": "Widely published vendor memory config for the 16GB RTX 4060 Ti. An 8GB variant of the same name exists.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 7B–14B Q4/Q5 is a comfortable starting band at short context.",
+        "Estimate: 27B–32B Q4 is commonly a partial offload on 16GB, not a roomy full-GPU fit.",
+        "Estimate: the narrow memory bus is a published spec detail. This card still sorts models by the 16GB capacity."
+      ]
+    },
+    {
+      "id": "rtx-5060-ti-16gb",
+      "name": "GeForce RTX 5060 Ti 16GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 16,
+      "memory": "GDDR7",
+      "bus": "128-bit",
+      "class_label": "16GB class",
+      "spec_note": "NVIDIA's GeForce compare table lists an RTX 5060 Ti in 16 GB and 8 GB GDDR7 configs. This row is the 16GB card.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: pick the 16GB board on purpose. The 8GB RTX 5060 Ti is a different capacity class.",
+        "Estimate: 7B–14B Q4/Q5 is the comfortable short-context band.",
+        "Estimate: 32B Q4 weights generally spill into partial offload on 16GB."
+      ]
+    },
+    {
+      "id": "rx-7800-xt-16gb",
+      "name": "Radeon RX 7800 XT 16GB",
+      "vendor": "AMD",
+      "vram_gb": 16,
+      "memory": "GDDR6",
+      "bus": "256-bit",
+      "class_label": "16GB class",
+      "spec_note": "Widely published vendor memory config for the RX 7800 XT (16 GB GDDR6). Confirm on AMD's product page.",
+      "spec_url": "https://www.amd.com/en/products/graphics/desktops/radeon.html",
+      "runtime_note": "CUDA builds do not drive this card. Look at llama.cpp Vulkan or ROCm builds.",
+      "capacity_notes": [
+        "Estimate: 16GB class, same capacity band as a 16GB GeForce, with a different software path.",
+        "Estimate: 7B–14B Q4/Q5 is a comfortable starting band at short context.",
+        "Estimate: budget about 32GB system RAM if you plan to offload, plus tens of GB of disk for GGUF files."
+      ]
+    },
+    {
+      "id": "rtx-4070-ti-super-16gb",
+      "name": "GeForce RTX 4070 Ti Super 16GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 16,
+      "memory": "GDDR6X",
+      "bus": "256-bit",
+      "class_label": "16GB class",
+      "spec_note": "Widely published vendor memory config for the RTX 4070 Ti Super 16GB. The earlier 4070 Ti is a 12GB card.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 16GB class. Do not confuse it with the 12GB RTX 4070 Ti.",
+        "Estimate: 7B–14B Q4/Q5 fits the comfortable short-context band.",
+        "Estimate: 27B–32B Q4 is commonly tight or a partial offload."
+      ]
+    },
+    {
+      "id": "rtx-4080-16gb",
+      "name": "GeForce RTX 4080 16GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 16,
+      "memory": "GDDR6X",
+      "bus": "256-bit",
+      "class_label": "16GB class",
+      "spec_note": "Widely published vendor memory config for the 16GB RTX 4080 / 4080 Super class.",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: faster than a 4060 Ti 16GB, same 16GB capacity ceiling for weights.",
+        "Estimate: 7B–14B Q4/Q5 is the comfortable short-context band.",
+        "Estimate: 70B Q4 weights stay well above a 16GB card."
+      ]
+    },
+    {
+      "id": "rtx-5080-16gb",
+      "name": "GeForce RTX 5080 16GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 16,
+      "memory": "GDDR7",
+      "bus": "256-bit",
+      "class_label": "16GB class",
+      "spec_note": "NVIDIA's GeForce compare table lists 16 GB GDDR7 and a 256-bit interface for the RTX 5080 (published spec).",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 7B–14B Q4/Q5 is a comfortable starting band at short context.",
+        "Estimate: 27B–32B Q4 is commonly a partial offload on 16GB, not a roomy full-GPU fit.",
+        "Estimate: pair the card with about 32GB system RAM if you offload, and leave 20–40GB of disk free for a few GGUF files."
+      ]
+    },
+    {
+      "id": "rtx-4090-24gb",
+      "name": "GeForce RTX 4090 24GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 24,
+      "memory": "GDDR6X",
+      "bus": "384-bit",
+      "class_label": "24GB class",
+      "spec_note": "Widely published vendor memory config for the RTX 4090 (24 GB GDDR6X).",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 14B–32B Q4 is the interesting band. 32B Q4 is often tight once context grows.",
+        "Estimate: 70B Q4 still wants partial offload or a smaller quant on 24GB.",
+        "Estimate: 64GB system RAM is the calmer partner if you experiment with 70B-class splits."
+      ]
+    },
+    {
+      "id": "rx-7900-xtx-24gb",
+      "name": "Radeon RX 7900 XTX 24GB",
+      "vendor": "AMD",
+      "vram_gb": 24,
+      "memory": "GDDR6",
+      "bus": "384-bit",
+      "class_label": "24GB class",
+      "spec_note": "Widely published vendor memory config for the RX 7900 XTX (24 GB GDDR6). Confirm on AMD's product page.",
+      "spec_url": "https://www.amd.com/en/products/graphics/desktops/radeon.html",
+      "runtime_note": "CUDA builds do not drive this card. Look at llama.cpp Vulkan or ROCm builds.",
+      "capacity_notes": [
+        "Estimate: 24GB capacity class, similar weight ceiling to a 24GB GeForce, different runtime.",
+        "Estimate: 32B Q4 is often tight at short context. 70B Q4 is a partial-offload project.",
+        "Estimate: 64GB system RAM gives you room when a split model lands in CPU memory."
+      ]
+    },
+    {
+      "id": "rtx-5090-32gb",
+      "name": "GeForce RTX 5090 32GB",
+      "vendor": "NVIDIA",
+      "vram_gb": 32,
+      "memory": "GDDR7",
+      "bus": "512-bit",
+      "class_label": "32GB class",
+      "spec_note": "NVIDIA's GeForce compare table lists 32 GB GDDR7 and a 512-bit interface for the RTX 5090 (published spec).",
+      "spec_url": "https://www.nvidia.com/en-us/geforce/graphics-cards/compare/",
+      "runtime_note": "Usual hobby path: llama.cpp built with CUDA, or a desktop app that runs GGUF for you.",
+      "capacity_notes": [
+        "Estimate: 32B Q4 often fits with headroom at short context.",
+        "Estimate: 70B Q4 is still usually a partial offload on 32GB.",
+        "Estimate: 64GB system RAM is the comfortable partner for 70B-class experiments."
+      ]
+    }
+  ],
+  "models": [
+    {
+      "id": "llama-3.2-3b-q4",
+      "name": "Llama 3.2 3B Instruct",
+      "params_label": "3B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 2.0,
+      "vram_estimate_gb": 3.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Small instruct model. A common first download when VRAM is tight.",
+      "model_card_url": "https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct"
+    },
+    {
+      "id": "llama-3.1-8b-q4",
+      "name": "Llama 3.1 8B Instruct",
+      "params_label": "8B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 4.9,
+      "vram_estimate_gb": 6.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Widely used general instruct GGUF. Q4_K_M is the usual hobbyist starting quant.",
+      "model_card_url": "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct"
+    },
+    {
+      "id": "llama-3.1-8b-q8",
+      "name": "Llama 3.1 8B Instruct",
+      "params_label": "8B",
+      "quant": "Q8_0",
+      "tag": "general",
+      "disk_estimate_gb": 8.5,
+      "vram_estimate_gb": 10.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Same 8B model at a higher-bit quant. Heavier file, chosen when the card has spare VRAM.",
+      "model_card_url": "https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct"
+    },
+    {
+      "id": "mistral-7b-v03-q5",
+      "name": "Mistral 7B Instruct v0.3",
+      "params_label": "7B",
+      "quant": "Q5_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 5.5,
+      "vram_estimate_gb": 7.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Older, still common 7B baseline. Q5_K_M is a popular middle quant.",
+      "model_card_url": "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3"
+    },
+    {
+      "id": "qwen2.5-7b-q4",
+      "name": "Qwen2.5 7B Instruct",
+      "params_label": "7B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 4.7,
+      "vram_estimate_gb": 6.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Strong small general model in the public Qwen2.5 family.",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct"
+    },
+    {
+      "id": "qwen2.5-coder-7b-q4",
+      "name": "Qwen2.5-Coder 7B Instruct",
+      "params_label": "7B",
+      "quant": "Q4_K_M",
+      "tag": "code",
+      "disk_estimate_gb": 4.7,
+      "vram_estimate_gb": 6.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Code-leaning 7B. Same rough weight class as the general 7B Q4.",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct"
+    },
+    {
+      "id": "deepseek-r1-qwen-7b-q4",
+      "name": "DeepSeek-R1-Distill-Qwen-7B",
+      "params_label": "7B",
+      "quant": "Q4_K_M",
+      "tag": "reasoning",
+      "disk_estimate_gb": 4.7,
+      "vram_estimate_gb": 6.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Small reasoning-style distill. Similar weight class to other 7B Q4 files.",
+      "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    },
+    {
+      "id": "gemma-2-9b-q4",
+      "name": "Gemma 2 9B Instruct",
+      "params_label": "9B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 5.8,
+      "vram_estimate_gb": 8.0,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "Public Gemma 2 9B instruct model. Slightly heavier than an 8B Q4.",
+      "model_card_url": "https://huggingface.co/google/gemma-2-9b-it"
+    },
+    {
+      "id": "mistral-nemo-12b-q4",
+      "name": "Mistral Nemo 12B Instruct",
+      "params_label": "12B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 7.5,
+      "vram_estimate_gb": 9.5,
+      "system_ram_estimate_gb": 16,
+      "estimate": true,
+      "note": "12B instruct model. A step up in size from the 7B and 8B rows.",
+      "model_card_url": "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407"
+    },
+    {
+      "id": "phi-4-q4",
+      "name": "Phi-4",
+      "params_label": "14B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 9.0,
+      "vram_estimate_gb": 11.0,
+      "system_ram_estimate_gb": 32,
+      "estimate": true,
+      "note": "Microsoft Phi-4, a public 14B-class model. Q4_K_M is the hobbyist starting quant.",
+      "model_card_url": "https://huggingface.co/microsoft/phi-4"
+    },
+    {
+      "id": "qwen2.5-14b-q4",
+      "name": "Qwen2.5 14B Instruct",
+      "params_label": "14B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 9.0,
+      "vram_estimate_gb": 11.0,
+      "system_ram_estimate_gb": 32,
+      "estimate": true,
+      "note": "Mid-size Qwen2.5. Often the largest comfortable Q4 on a 16GB card at short context.",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen2.5-14B-Instruct"
+    },
+    {
+      "id": "gemma-2-27b-q4",
+      "name": "Gemma 2 27B Instruct",
+      "params_label": "27B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 16.0,
+      "vram_estimate_gb": 18.5,
+      "system_ram_estimate_gb": 32,
+      "estimate": true,
+      "note": "Large Gemma 2. The Q4 file itself sits in the mid-teens of GB.",
+      "model_card_url": "https://huggingface.co/google/gemma-2-27b-it"
+    },
+    {
+      "id": "qwen2.5-32b-q4",
+      "name": "Qwen2.5 32B Instruct",
+      "params_label": "32B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 19.5,
+      "vram_estimate_gb": 22.0,
+      "system_ram_estimate_gb": 32,
+      "estimate": true,
+      "note": "32B general instruct. A 24GB card is the first class where Q4 is even plausible.",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct"
+    },
+    {
+      "id": "deepseek-r1-qwen-32b-q4",
+      "name": "DeepSeek-R1-Distill-Qwen-32B",
+      "params_label": "32B",
+      "quant": "Q4_K_M",
+      "tag": "reasoning",
+      "disk_estimate_gb": 19.5,
+      "vram_estimate_gb": 22.5,
+      "system_ram_estimate_gb": 32,
+      "estimate": true,
+      "note": "Larger reasoning-style distill. Weight class similar to other 32B Q4 files.",
+      "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+    },
+    {
+      "id": "qwen2.5-72b-q3",
+      "name": "Qwen2.5 72B Instruct",
+      "params_label": "72B",
+      "quant": "Q3_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 35.0,
+      "vram_estimate_gb": 39.0,
+      "system_ram_estimate_gb": 64,
+      "estimate": true,
+      "note": "72B at a more aggressive Q3 quant. Still a very large file.",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen2.5-72B-Instruct"
+    },
+    {
+      "id": "llama-3.3-70b-q4",
+      "name": "Llama 3.3 70B Instruct",
+      "params_label": "70B",
+      "quant": "Q4_K_M",
+      "tag": "general",
+      "disk_estimate_gb": 42.0,
+      "vram_estimate_gb": 47.0,
+      "system_ram_estimate_gb": 64,
+      "estimate": true,
+      "note": "70B instruct. Treat a full-GPU fit as a high-VRAM problem.",
+      "model_card_url": "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct"
+    }
+  ]
+}

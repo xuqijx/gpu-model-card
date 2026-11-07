@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consumer GPU Model Card</title>
+  <meta name="description" content="Pick a consumer GPU and see which popular quantized LLMs are likely to fit. VRAM, disk, and system RAM figures are estimates.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%2314160f' width='16' height='16'/%3E%3Crect x='3' y='3' width='10' height='10' fill='none' stroke='%23e6a23c' stroke-width='1.5'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bench: #14160f;
+      --rail: #1b1e14;
+      --line: #313628;
+      --paper: #f6f1e6;
+      --ink: #221e18;
+      --muted: #5c564c;
+      --amber: #e2a33a;
+      --stamp: #b4332a;
+      --likely: #17643d;
+      --likely-bg: #e4f3ea;
+      --tight: #8a5a10;
+      --tight-bg: #f8efd8;
+      --offload: #234864;
+      --offload-bg: #e4eef6;
+      --unlikely: #7c332d;
+      --unlikely-bg: #f8e8e4;
+      --serif: "Newsreader", "Iowan Old Style", Palatino, "Palatino Linotype", serif;
+      --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", "SFMono-Regular", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 420px at 0% -10%, rgba(226, 163, 58, 0.12), transparent 55%),
+        var(--bench);
+      color: #f3ecdf;
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.45;
+    }
+    .skip {
+      position: absolute;
+      left: 12px;
+      top: -40px;
+      background: white;
+      color: black;
+      padding: 8px 12px;
+      z-index: 5;
+    }
+    .skip:focus { top: 12px; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+    header.site { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 18px; }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin: 0 0 6px;
+    }
+    h1 { font-size: 42px; line-height: 0.95; font-weight: 600; margin: 0; letter-spacing: -0.03em; }
+    .lede { margin: 10px 0 0; max-width: 46ch; color: #ddd4c4; font-size: 18px; }
+    .banner {
+      margin: 0 0 18px;
+      padding: 10px 12px;
+      border: 1px solid #3d432f;
+      background: #22261a;
+      color: #f0e6d4;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      letter-spacing: 0.01em;
+    }
+    main { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
+    .rail {
+      background: var(--rail);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+    }
+    .rail h2, .custom h2 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-family: var(--mono);
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    label { display: block; font-family: var(--mono); font-size: 12px; color: #c9c2b2; }
+    input[type="search"], input[type="number"], input[type="text"] {
+      width: 100%;
+      margin: 4px 0 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #3a3f30;
+      background: #12140e;
+      color: #f6f0e4;
+      font: 14px/1.3 var(--mono);
+    }
+    .gpu-list { display: flex; flex-direction: column; gap: 4px; }
+    .gpu {
+      text-align: left;
+      width: 100%;
+      border: 1px solid transparent;
+      background: #23271b;
+      color: #f4ecdf;
+      border-radius: 10px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .gpu small { display: block; color: #c4bbaa; font-family: var(--mono); font-size: 11px; margin-top: 2px; }
+    .gpu strong { font-weight: 600; font-size: 15px; }
+    .meter { display: block; height: 3px; margin-top: 4px; background: #34382c; border-radius: 99px; }
+    .meter > span { display: block; height: 100%; width: var(--w); background: var(--amber); border-radius: inherit; }
+    .gpu.is-selected { border-color: var(--amber); background: #2c2818; }
+    .gpu:hover { border-color: #6d6244; }
+    .custom { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .custom .row { display: grid; grid-template-columns: 88px 1fr; gap: 8px; }
+    button.solid, .toggle button {
+      font-family: var(--mono);
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid #3d432f;
+      background: #2a2e20;
+      color: #f6f0e4;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button.solid { background: var(--amber); color: #231b0c; border-color: transparent; font-weight: 600; }
+    .card {
+      position: relative;
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: 18px;
+      padding: 22px 22px 18px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      min-height: 640px;
+    }
+    .card-head { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+    .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+    .card h2 { font-size: 36px; line-height: 1; margin: 0; letter-spacing: -0.03em; }
+    .spec { margin: 8px 0 0; font-family: var(--mono); font-size: 13px; }
+    .spec a { color: #1d4e8f; }
+    .stamp {
+      flex: 0 0 auto;
+      margin: 4px 0 0;
+      border: 2px solid var(--stamp);
+      color: var(--stamp);
+      font-family: var(--mono);
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 12px;
+      padding: 8px 10px;
+      transform: rotate(6deg);
+    }
+    .notes { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 14px; margin: 16px 0; }
+    .notes ul { margin: 0; padding-left: 18px; }
+    .notes li { margin: 0 0 6px; }
+    .aside-note { background: #efe8d8; border-radius: 12px; padding: 12px; font-size: 15px; }
+    .aside-note p { margin: 0 0 8px; }
+    .aside-note p:last-child { margin: 0; }
+    .toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .counts { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 0; }
+    .toggle { display: flex; gap: 6px; }
+    .toggle button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .rule { font-size: 14px; color: var(--muted); margin: 0 0 10px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th { text-align: left; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid #ddd4c4; }
+    td { padding: 8px; vertical-align: top; border-bottom: 1px solid #e6dece; }
+    td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .sub { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #6d6456; }
+    .fit { display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
+    .fit-likely { background: var(--likely-bg); color: var(--likely); }
+    .fit-tight { background: var(--tight-bg); color: var(--tight); }
+    .fit-partial_offload { background: var(--offload-bg); color: var(--offload); }
+    .fit-unlikely { background: var(--unlikely-bg); color: var(--unlikely); }
+    .links { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 14px 0 0; font-family: var(--mono); font-size: 13px; }
+    .links a { color: #1d4e8f; }
+    .fine { font-size: 14px; color: var(--muted); margin: 10px 0 0; }
+    caption {
+      caption-side: bottom;
+      text-align: left;
+      color: var(--muted);
+      font-size: 13px;
+      padding-top: 8px;
+    }
+    .table-wrap a { white-space: nowrap; }
+    .empty, .error {
+      padding: 16px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px dashed #c8bfae;
+    }
+    footer.site { margin-top: 18px; color: #b7b09f; font-family: var(--mono); font-size: 12px; }
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+    @media (max-width: 860px) {
+      header.site { display: block; }
+      h1 { font-size: 34px; }
+      main { grid-template-columns: 1fr; }
+      .rail { position: static; max-height: none; }
+      .gpu-list { max-height: 420px; overflow: auto; }
+      .notes { grid-template-columns: 1fr; }
+      .card h2 { font-size: 30px; }
+      .card { min-height: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .stamp { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#card">Skip to card</a>
+  <div class="wrap">
+    <header class="site">
+      <div>
+        <p class="eyebrow">Local LLM bench notes</p>
+        <h1>Consumer GPU Model Card</h1>
+        <p class="lede">Pick a consumer graphics card. See which popular quantized models are likely to fit, plus rough disk and system RAM notes.</p>
+      </div>
+    </header>
+    <p class="banner" id="banner">Estimate catalog. Model VRAM, disk, and system RAM figures are rounded ballparks. This page did not run speed tests. GPU memory sizes are vendor-published specs.</p>
+    <main>
+      <aside class="rail" aria-label="GPU picker">
+        <h2>Cards</h2>
+        <label for="q">Filter
+          <input id="q" type="search" placeholder="5080, 12GB, AMD…" autocomplete="off">
+        </label>
+        <div class="gpu-list" id="gpu-list"></div>
+        <form class="custom" id="custom">
+          <h2>Other VRAM</h2>
+          <div class="row">
+            <label>GB
+              <input id="vram" type="number" min="1" max="128" step="0.5" value="16" required>
+            </label>
+            <label>Name
+              <input id="custom-name" type="text" maxlength="60" placeholder="Optional">
+            </label>
+          </div>
+          <button class="solid" type="submit">Make estimate card</button>
+        </form>
+      </aside>
+      <article class="card" id="card" aria-live="polite">
+        <p>Loading catalog…</p>
+      </article>
+    </main>
+    <footer class="site" id="footer">Sample catalog of public model names. Figures are estimates.</footer>
+    <noscript><p class="banner">This page needs JavaScript to turn the catalog into a card. The data file is data/catalog.json.</p></noscript>
+  </div>
+  <script>
+    const FIT_ORDER = ["likely", "tight", "partial_offload", "unlikely"];
+    const FIT_LABEL = {
+      likely: "Likely",
+      tight: "Tight",
+      partial_offload: "Partial offload",
+      unlikely: "Unlikely"
+    };
+    const state = { catalog: null, view: "starter" };
+
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[ch]));
+    }
+
+    function fmt(value) {
+      const rounded = Math.round(Number(value) * 10) / 10;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    }
+
+    function classify(vram, estimate, rule) {
+      const usable = Math.max(Number(vram) - Number(rule.reserve_gb), 0);
+      const est = Number(estimate);
+      if (est <= usable * Number(rule.likely_of_usable)) return "likely";
+      if (est <= usable) return "tight";
+      if (est <= Number(vram) * Number(rule.offload_of_vram)) return "partial_offload";
+      return "unlikely";
+    }
+
+    function synthetic(name, vram) {
+      const shown = fmt(vram);
+      const label = (name || "").trim() || ("Custom " + shown + " GB card");
+      return {
+        id: "vram-" + shown,
+        name: label,
+        vendor: "Custom entry",
+        vram_gb: Number(vram),
+        memory: "",
+        bus: "",
+        class_label: shown + " GB entered",
+        spec_note: "You entered this VRAM figure. This tool did not check it against a vendor spec.",
+        spec_url: "",
+        runtime_note: "Runtime depends on the card vendor. NVIDIA hobby setups usually use a CUDA build of llama.cpp. AMD and Intel cards need a Vulkan, ROCm, or SYCL build.",
+        capacity_notes: [
+          "Estimate: fit rows below use " + shown + " GB as the capacity in the shared rule.",
+          "Estimate: match the exact VRAM on the box. Several GPU names ship in more than one size.",
+          "Estimate: system RAM and disk columns are ballparks for a hobby PC, including the OS."
+        ]
+      };
+    }
+
+    function selection() {
+      const raw = decodeURIComponent(location.hash.replace(/^#/, "")).trim();
+      const key = raw.toLowerCase();
+      if (key.startsWith("vram-")) {
+        const gb = Number(key.slice(5));
+        if (Number.isFinite(gb) && gb > 0 && gb <= 128) {
+          let name = "";
+          try {
+            const saved = JSON.parse(sessionStorage.getItem("custom-gpu") || "null");
+            if (saved && Number(saved.gb) === gb && saved.name) name = saved.name;
+          } catch (err) { /* private mode */ }
+          return { kind: "custom", gpu: synthetic(name, gb) };
+        }
+      }
+      const gpu = state.catalog.gpus.find((item) => item.id === key);
+      if (gpu) return { kind: "gpu", gpu: gpu };
+      return { kind: "missing", id: raw };
+    }
+
+    function rowsFor(vram) {
+      const rule = state.catalog.meta.fit_rule;
+      return state.catalog.models
+        .map((model) => Object.assign({}, model, { fit: classify(vram, model.vram_estimate_gb, rule) }))
+        .sort((a, b) => FIT_ORDER.indexOf(a.fit) - FIT_ORDER.indexOf(b.fit) || a.vram_estimate_gb - b.vram_estimate_gb || a.name.localeCompare(b.name));
+    }
+
+    function renderList() {
+      const query = document.getElementById("q").value.trim().toLowerCase();
+      const current = selection();
+      const currentId = current.gpu ? current.gpu.id : "";
+      const host = document.getElementById("gpu-list");
+      const items = state.catalog.gpus.filter((gpu) => {
+        const hay = (gpu.name + " " + gpu.vendor + " " + gpu.class_label + " " + gpu.id + " " + gpu.vram_gb).toLowerCase();
+        return !query || hay.includes(query);
+      });
+      if (!items.length) {
+        host.innerHTML = "<p class=\"sub\">No GPU in this sample matches.</p>";
+        return;
+      }
+      host.innerHTML = items.map((gpu) => {
+        const width = Math.max(8, Math.min(100, (Number(gpu.vram_gb) / 32) * 100));
+        const pressed = gpu.id === currentId ? "true" : "false";
+        return "<button type=\"button\" class=\"gpu" + (pressed === "true" ? " is-selected" : "") + "\" data-id=\"" + esc(gpu.id) + "\" aria-pressed=\"" + pressed + "\">" +
+          "<strong>" + esc(gpu.name) + "</strong>" +
+          "<small>" + esc(gpu.vendor) + " · " + esc(fmt(gpu.vram_gb)) + " GB published · " + esc(gpu.class_label) + "</small>" +
+          "<span class=\"meter\" title=\"Published VRAM, scaled against 32 GB\"><span style=\"--w:" + width + "%\"></span></span>" +
+          "</button>";
+      }).join("");
+      host.querySelectorAll(".gpu").forEach((button) => {
+        button.addEventListener("click", () => {
+          location.hash = button.getAttribute("data-id");
+          if (window.matchMedia("(max-width: 860px)").matches) {
+            document.getElementById("card").scrollIntoView({ block: "start" });
+          }
+        });
+      });
+    }
+
+    function renderCard() {
+      const card = document.getElementById("card");
+      const picked = selection();
+      if (picked.kind === "missing") {
+        card.innerHTML = "<div class=\"empty\"><h2>No card for that id</h2><p>Pick a GPU from the sample list, or enter a VRAM size. Nothing was measured for \"" + esc(picked.id) + "\".</p></div>";
+        return;
+      }
+      const gpu = picked.gpu;
+      const meta = state.catalog.meta;
+      const rule = meta.fit_rule;
+      const rows = rowsFor(gpu.vram_gb);
+      const counts = { likely: 0, tight: 0, partial_offload: 0, unlikely: 0 };
+      rows.forEach((row) => { counts[row.fit] += 1; });
+      const visible = state.view === "starter" ? rows.filter((row) => row.fit === "likely" || row.fit === "tight") : rows;
+      const memoryBits = [fmt(gpu.vram_gb) + " GB published"].concat(gpu.memory ? [gpu.memory] : []).concat(gpu.bus ? [gpu.bus] : []);
+      const specLink = gpu.spec_url ? " <a href=\"" + esc(gpu.spec_url) + "\" rel=\"noopener noreferrer\">Vendor page</a>" : "";
+      const body = visible.length ? tableHtml(visible) : "<div class=\"empty\"><p>No starter rows under this estimate rule. Show all estimates to see partial offload and unlikely rows.</p></div>";
+      card.innerHTML =
+        "<div class=\"card-head\">" +
+          "<div><p class=\"kicker\">" + esc(gpu.vendor) + " · " + esc(gpu.class_label) + "</p>" +
+          "<h2>" + esc(gpu.name) + "</h2>" +
+          "<p class=\"spec\">" + esc(memoryBits.join(" · ")) + specLink + "</p></div>" +
+          "<p class=\"stamp\">Estimate</p>" +
+        "</div>" +
+        "<div class=\"notes\"><ul>" + gpu.capacity_notes.map((note) => "<li>" + esc(note) + "</li>").join("") + "</ul>" +
+          "<div class=\"aside-note\"><p>" + esc(gpu.spec_note) + "</p><p>" + esc(gpu.runtime_note) + "</p></div></div>" +
+        "<div class=\"toolbar\">" +
+          "<p class=\"counts\">" + counts.likely + " likely · " + counts.tight + " tight · " + counts.partial_offload + " partial offload · " + counts.unlikely + " unlikely</p>" +
+          "<div class=\"toggle\" role=\"group\" aria-label=\"Which estimate rows to show\">" +
+            "<button type=\"button\" id=\"view-starter\" aria-pressed=\"" + (state.view === "starter" ? "true" : "false") + "\">Starter fits</button>" +
+            "<button type=\"button\" id=\"view-all\" aria-pressed=\"" + (state.view === "all" ? "true" : "false") + "\">All estimates</button>" +
+          "</div></div>" +
+        "<p class=\"rule\">Fit rule (estimate): usable = published VRAM − " + esc(rule.reserve_gb) + " GB. Likely means the VRAM estimate is at most " + Math.round(Number(rule.likely_of_usable) * 100) + "% of usable. Tight means it is still within usable. Partial offload means it is within " + esc(rule.offload_of_vram) + "× published VRAM. " + esc(rule.context_note) + "</p>" +
+        body +
+        "<div class=\"links\">" + meta.start_here.map((link) => "<a href=\"" + esc(link.url) + "\" rel=\"noopener noreferrer\">" + esc(link.label) + "</a>").join("") + "</div>" +
+        "<p class=\"fine\">" + esc(meta.estimate_basis) + " " + esc(meta.weights_note) + "</p>";
+      document.getElementById("view-starter").addEventListener("click", () => setView("starter"));
+      document.getElementById("view-all").addEventListener("click", () => setView("all"));
+      document.title = gpu.name + " · Consumer GPU Model Card";
+    }
+
+    function tableHtml(rows) {
+      const body = rows.map((row) =>
+        "<tr>" +
+          "<td><span class=\"tag\">" + esc(row.tag) + " · " + esc(row.params_label) + "</span><br><strong>" + esc(row.name) + "</strong>" +
+            "<span class=\"sub\">System RAM est. " + esc(fmt(row.system_ram_estimate_gb)) + " GB · " + esc(row.note) + "</span></td>" +
+          "<td class=\"num\">" + esc(row.quant) + "</td>" +
+          "<td class=\"num\">" + esc(fmt(row.vram_estimate_gb)) + " GB</td>" +
+          "<td class=\"num\">" + esc(fmt(row.disk_estimate_gb)) + " GB</td>" +
+          "<td><span class=\"fit fit-" + esc(row.fit) + "\">" + esc(FIT_LABEL[row.fit]) + "</span></td>" +
+          "<td><a href=\"" + esc(row.model_card_url) + "\" rel=\"noopener noreferrer\">Model card</a></td>" +
+        "</tr>"
+      ).join("");
+      return "<div class=\"table-wrap\"><table><caption>Sample GGUF-style quants. Every number in this table is an estimate.</caption><thead><tr>" +
+        "<th>Model</th><th class=\"num\">Quant</th><th class=\"num\">VRAM est.</th><th class=\"num\">Disk est.</th><th>Fit</th><th>Start</th>" +
+        "</tr></thead><tbody>" + body + "</tbody></table></div>";
+    }
+
+    function readView() {
+      return new URLSearchParams(location.search).get("view") === "all" ? "all" : "starter";
+    }
+
+    function setView(view) {
+      state.view = view;
+      const url = new URL(location.href);
+      if (view === "all") url.searchParams.set("view", "all");
+      else url.searchParams.delete("view");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+      renderCard();
+    }
+
+    function render() {
+      renderList();
+      renderCard();
+    }
+
+    function showFetchError() {
+      document.getElementById("card").innerHTML =
+        "<div class=\"error\"><h2>Catalog did not load</h2>" +
+        "<p>The page reads <code>data/catalog.json</code> from the same folder. Opening the HTML file directly can block that fetch.</p>" +
+        "<p>From the project folder, run <code>python3 -m http.server</code> and open the local URL it prints. GitHub Pages works the same way, because the path is relative.</p></div>";
+    }
+
+    async function init() {
+      try {
+        const response = await fetch("data/catalog.json");
+        if (!response.ok) throw new Error(String(response.status));
+        state.catalog = await response.json();
+      } catch (err) {
+        showFetchError();
+        return;
+      }
+      const meta = state.catalog.meta;
+      document.getElementById("banner").textContent = meta.disclaimer;
+      document.getElementById("footer").textContent = "Catalog " + meta.catalog_date + ". " + meta.sample_label;
+      document.getElementById("q").addEventListener("input", renderList);
+      document.getElementById("custom").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const gb = Number(document.getElementById("vram").value);
+        if (!Number.isFinite(gb) || gb <= 0 || gb > 128) return;
+        const name = document.getElementById("custom-name").value.trim();
+        try {
+          sessionStorage.setItem("custom-gpu", JSON.stringify({ gb: gb, name: name }));
+        } catch (err) { /* ignore */ }
+        const next = "vram-" + fmt(gb);
+        if (location.hash.replace(/^#/, "") === next) render();
+        else location.hash = next;
+      });
+      window.addEventListener("hashchange", render);
+      state.view = readView();
+      if (!location.hash) history.replaceState(null, "", location.pathname + location.search + "#rtx-5080-16gb");
+      render();
+    }
+
+    init();
+  </script>
+</body>
+</html>
